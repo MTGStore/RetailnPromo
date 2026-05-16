@@ -598,18 +598,97 @@
       updateDisplay();
     });
 
+    function roundToNearestNickel(price) {
+      return Math.round(price * 20) / 20;
+    }
+
     function updateDisplay() {
       if (dealState.unitCost > 0 && dealState.marginMin > 0) {
-        dealState.suggestedRetail = Math.round((dealState.unitCost / (1 - dealState.marginMin / 100)) * 100) / 100;
+        const baseRetail = dealState.unitCost / (1 - dealState.marginMin / 100);
+        dealState.suggestedRetail = roundToNearestNickel(baseRetail);
         document.getElementById('marginRange').textContent = dealState.marginMin + '–' + dealState.marginMax + '%';
         document.getElementById('suggestedRetail').textContent = dealState.suggestedRetail.toFixed(2);
         document.getElementById('marginDisplay').classList.add('show');
         document.getElementById('dealOptions').classList.add('show');
         document.getElementById('results').classList.remove('show');
+        
+        // Auto-display deal suggestions
+        displayDealSuggestions();
       } else {
         document.getElementById('marginDisplay').classList.remove('show');
         document.getElementById('dealOptions').classList.remove('show');
+        document.getElementById('results').classList.remove('show');
       }
+    }
+
+    function displayDealSuggestions() {
+      const suggestedBuy2Price = roundToNearestNickel(dealState.suggestedRetail * 1.9);
+      const suggestedBuy3Price = roundToNearestNickel(dealState.suggestedRetail * 2.85);
+      
+      // Calculate Buy 2 metrics
+      const buy2CostTotal = Math.round(dealState.unitCost * 2 * 100) / 100;
+      const buy2MarginTotal = Math.round((suggestedBuy2Price - buy2CostTotal) * 100) / 100;
+      const buy2MarginPct = Math.round((buy2MarginTotal / suggestedBuy2Price) * 100);
+      const buy2CustomerSaves = Math.round((dealState.suggestedRetail * 2 - suggestedBuy2Price) * 100) / 100;
+      
+      // Calculate Buy 3 metrics
+      const buy3CostTotal = Math.round(dealState.unitCost * 3 * 100) / 100;
+      const buy3MarginTotal = Math.round((suggestedBuy3Price - buy3CostTotal) * 100) / 100;
+      const buy3MarginPct = Math.round((buy3MarginTotal / suggestedBuy3Price) * 100);
+      const buy3CustomerSaves = Math.round((dealState.suggestedRetail * 3 - suggestedBuy3Price) * 100) / 100;
+      
+      let suggestionsHTML = `
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+          <div style="font-size: 12px; font-weight: 500; color: #667eea; margin-bottom: 12px; text-transform: uppercase;">Suggested Deal Options</div>
+          
+          <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+            <div style="font-size: 13px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px;">Buy 2 for $${suggestedBuy2Price.toFixed(2)}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Your Margin</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy2MarginTotal.toFixed(2)} (${buy2MarginPct}%)</div>
+              </div>
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Customer Saves</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy2CustomerSaves.toFixed(2)}</div>
+              </div>
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Your Cost</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy2CostTotal.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div style="padding-bottom: 1rem;">
+            <div style="font-size: 13px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px;">Buy 3 for $${suggestedBuy3Price.toFixed(2)}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Your Margin</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy3MarginTotal.toFixed(2)} (${buy3MarginPct}%)</div>
+              </div>
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Customer Saves</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy3CustomerSaves.toFixed(2)}</div>
+              </div>
+              <div style="background: white; padding: 8px; border-radius: 6px;">
+                <div style="color: #666; margin-bottom: 3px;">Your Cost</div>
+                <div style="font-weight: 500; color: #1a1a1a;">$${buy3CostTotal.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('dealOptions').innerHTML = suggestionsHTML + `
+        <div style="font-size: 12px; font-weight: 500; color: #666; margin-top: 1rem; margin-bottom: 12px;">Need to adjust? Click a deal type below:</div>
+        <div class="button-grid">
+          <button onclick="showDealForm('buy2')">Adjust Buy 2</button>
+          <button onclick="showDealForm('buy3')">Adjust Buy 3</button>
+          <button onclick="showDealForm('bogo')">BOGO</button>
+          <button onclick="showDealForm('discount')">Qty Discount</button>
+          <button class="button-full" onclick="showDealForm('single')">✓ Just Use Suggested Retail</button>
+        </div>
+      `;
     }
 
     function showDealForm(type) {
@@ -619,22 +698,22 @@
       
       if (type === 'buy2') {
         document.getElementById('dealFormTitle').textContent = 'Buy 2 for $X';
-        const suggestedDealPrice = Math.round(dealState.suggestedRetail * 1.9 * 100) / 100;
+        const suggestedDealPrice = roundToNearestNickel(dealState.suggestedRetail * 1.9);
         inputContainer.innerHTML = `
           <div class="input-group">
             <label for="dealPrice">Deal Price for 2 items ($)</label>
-            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDealPrice}">
+            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.05" min="0" value="${suggestedDealPrice}">
             <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 2).toFixed(2)} for 2</div>
           </div>
         `;
         currentResult.type = 'buy2';
       } else if (type === 'buy3') {
         document.getElementById('dealFormTitle').textContent = 'Buy 3 for $X';
-        const suggestedDealPrice = Math.round(dealState.suggestedRetail * 2.85 * 100) / 100;
+        const suggestedDealPrice = roundToNearestNickel(dealState.suggestedRetail * 2.85);
         inputContainer.innerHTML = `
           <div class="input-group">
             <label for="dealPrice">Deal Price for 3 items ($)</label>
-            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDealPrice}">
+            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.05" min="0" value="${suggestedDealPrice}">
             <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 3).toFixed(2)} for 3</div>
           </div>
         `;
@@ -644,18 +723,18 @@
         inputContainer.innerHTML = `
           <div class="input-group">
             <label for="payPrice">Pay Price (1st item)</label>
-            <input type="number" id="payPrice" placeholder="e.g. ${dealState.suggestedRetail.toFixed(2)}" step="0.01" min="0" value="${dealState.suggestedRetail.toFixed(2)}">
+            <input type="number" id="payPrice" placeholder="e.g. ${dealState.suggestedRetail.toFixed(2)}" step="0.05" min="0" value="${dealState.suggestedRetail.toFixed(2)}">
           </div>
           <div class="input-group">
             <label for="secondPrice">2nd Item Price (0 = Free)</label>
-            <input type="number" id="secondPrice" placeholder="0 or discount" step="0.01" min="0" value="0">
+            <input type="number" id="secondPrice" placeholder="0 or discount" step="0.05" min="0" value="0">
           </div>
           <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 2).toFixed(2)} for 2</div>
         `;
         currentResult.type = 'bogo';
       } else if (type === 'discount') {
         document.getElementById('dealFormTitle').textContent = 'Quantity Discount';
-        const suggestedDiscPrice = Math.round(dealState.suggestedRetail * 0.85 * 100) / 100;
+        const suggestedDiscPrice = roundToNearestNickel(dealState.suggestedRetail * 0.85);
         inputContainer.innerHTML = `
           <div class="input-group">
             <label for="qtyBuy">Buy Quantity</label>
@@ -663,7 +742,7 @@
           </div>
           <div class="input-group">
             <label for="discPrice">Discount Price Each ($)</label>
-            <input type="number" id="discPrice" placeholder="e.g. ${suggestedDiscPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDiscPrice}">
+            <input type="number" id="discPrice" placeholder="e.g. ${suggestedDiscPrice.toFixed(2)}" step="0.05" min="0" value="${suggestedDiscPrice}">
           </div>
         `;
         currentResult.type = 'discount';
