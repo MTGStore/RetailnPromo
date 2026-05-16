@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRP and Deal Calculator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    
+    .login-container {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .login-container h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #1a1a1a;
+    }
+    
+    .login-container p {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    
+    .input-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .login-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .login-button:active {
+      transform: translateY(0);
+    }
+    
+    .error-message {
+      display: none;
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 13px;
+      border: 1px solid #fcc;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    /* Main App Styles */
+    .app-container {
+      display: none;
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .app-container.show {
+      display: block;
+    }
+    
+    .logout-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .logout-bar span {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .logout-button {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: transparent;
+      color: #667eea;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .logout-button:hover {
+      background: #f9f9f9;
+      border-color: #667eea;
+    }
+    
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      color: #1a1a1a;
+    }
+    
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #666;
+    }
+    
+    select, input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 0.5px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    
+    select:hover, input[type="number"]:hover {
+      border-color: #bbb;
+    }
+    
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .margin-display {
+      display: none;
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      border: 0.5px solid #e0e0e0;
+      margin-bottom: 1rem;
+    }
+    
+    .margin-display.show {
+      display: block;
+    }
+    
+    .margin-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    
+    .margin-range {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    
+    .suggested-retail {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .suggested-retail strong {
+      font-weight: 600;
+      color: #1a1a1a;
+      font-size: 18px;
+    }
+    
+    .deal-options {
+      display: none;
+      margin-bottom: 1.5rem;
+    }
+    
+    .deal-options.show {
+      display: block;
+    }
+    
+    .deal-options-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .button-full {
+      grid-column: 1 / -1;
+    }
+    
+    button {
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 0.5px solid #ddd;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #1a1a1a;
+    }
+    
+    button:hover {
+      background: #f9f9f9;
+      border-color: #bbb;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    button.primary {
+      border-color: #667eea;
+      color: #667eea;
+    }
+    
+    .deal-form {
+      display: none;
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .deal-form.show {
+      display: block;
+    }
+    
+    .deal-form h3 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #1a1a1a;
+    }
+    
+    .deal-form .input-group {
+      margin-bottom: 12px;
+    }
+    
+    .deal-form-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+    }
+    
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    .results {
+      display: none;
+      background: white;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    
+    .results.show {
+      display: block;
+    }
+    
+    .result-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #1a1a1a;
+    }
+    
+    .result-content {
+      margin-bottom: 1rem;
+      padding-top: 12px;
+      border-top: 0.5px solid #e0e0e0;
+    }
+    
+    .result-item {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+    
+    button.copy {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-color: #667eea;
+      color: #667eea;
+    }
+    
+    button.reset {
+      width: 100%;
+      padding: 10px;
+    }
+    
+    @media (max-width: 480px) {
+      .app-container {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 18px;
+      }
+      
+      .button-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .login-container {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div class="login-container" id="loginScreen">
+    <h1>SRP and Deal Calculator</h1>
+    <p>Employee Access Only</p>
+    
+    <div class="error-message" id="errorMessage"></div>
+    
+    <div class="input-group">
+      <label for="passwordInput">Enter Password</label>
+      <input type="password" id="passwordInput" placeholder="••••••" autocomplete="off">
+    </div>
+    
+    <button class="login-button" onclick="handleLogin()">Access Calculator</button>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="app-container" id="appContainer">
+    <div class="logout-bar">
+      <span>✓ Logged In</span>
+      <button class="logout-button" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <h1>SRP and Deal Calculator</h1>
+    
+    <div class="input-group">
+      <label for="category">Product Category</label>
+      <select id="category">
+        <option value="">-- Select category --</option>
+        <optgroup label="Group 1: Grocery/Beverage">
+          <option value="Candy|35-42">Candy (35–42%)</option>
+          <option value="Chips/Salty|35-42">Chips/Salty (35–42%)</option>
+          <option value="Bakery|35-42">Bakery (35–42%)</option>
+          <option value="Soda|36-44">Soda (36–44%)</option>
+          <option value="Non ALH|36-44">Non ALH (36–44%)</option>
+          <option value="Isotonic|38-45">Isotonic (38–45%)</option>
+          <option value="Energy|38-45">Energy (38–45%)</option>
+          <option value="Water/FL Water|42-48">Water/FL Water (42–48%)</option>
+          <option value="Frozen/Ice Cream|38-45">Frozen/Ice Cream (38–45%)</option>
+          <option value="TH Non Alh|20-25">TH Non Alh (20–25%)</option>
+          <option value="Non Tax Groc|33-38">Non Tax Groc (33–38%)</option>
+        </optgroup>
+        <optgroup label="Group 2: Alcohol/Licensed">
+          <option value="Tax Groc|33-38">Tax Groc (33–38%)</option>
+          <option value="Beer-Single|25-30">Beer-Single (25–30%)</option>
+          <option value="Beer-PKG|20-25">Beer-PKG (20–25%)</option>
+          <option value="Wine|20-25">Wine (20–25%)</option>
+          <option value="Novelty-Other|50-60">Novelty-Other (50–60%)</option>
+          <option value="Novelty-Vape|45-55">Novelty-Vape (45–55%)</option>
+          <option value="Novelty-Merch|50-60">Novelty-Merch (50–60%)</option>
+          <option value="Health Hygiene|38-44">Health Hygiene (38–44%)</option>
+          <option value="Auto|33-38">Auto (33–38%)</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label for="unitCost">Unit Cost ($)</label>
+      <input type="number" id="unitCost" placeholder="e.g. 1.50" step="0.01" min="0">
+    </div>
+
+    <div class="margin-display" id="marginDisplay">
+      <div class="margin-label">Target Margin Range</div>
+      <div class="margin-range"><span id="marginRange"></span></div>
+      <div class="suggested-retail">Suggested Retail: <strong>$<span id="suggestedRetail">0.00</span></strong></div>
+    </div>
+
+    <div class="deal-options" id="dealOptions">
+      <div class="deal-options-label">SELECT DEAL TYPE</div>
+      <div class="button-grid">
+        <button onclick="showDealForm('buy2')">Buy 2 for $X</button>
+        <button onclick="showDealForm('buy3')">Buy 3 for $X</button>
+        <button onclick="showDealForm('bogo')">BOGO</button>
+        <button onclick="showDealForm('discount')">Qty Discount</button>
+        <button class="button-full" onclick="showDealForm('single')">✓ Just Use Suggested Retail</button>
+      </div>
+    </div>
+
+    <div class="deal-form" id="dealForm">
+      <h3 id="dealFormTitle"></h3>
+      <div id="dealFormInputs"></div>
+      <div class="button-row">
+        <button onclick="calcDeal()">Calculate</button>
+        <button onclick="closeDealForm()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-content" id="resultContent"></div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Margin ($)</div>
+          <div class="stat-value">$<span id="resultMarginDollars">0.00</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Margin %</div>
+          <div class="stat-value"><span id="resultMarginPercent">0</span>%</div>
+        </div>
+      </div>
+      <button class="copy" onclick="copyResults()">Copy Deal Info</button>
+      <button class="reset" onclick="resetCalc()">Start Over</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== PASSWORD SETUP =====
+    // PASSWORD: Hiren1985
+    const CORRECT_PASSWORD = "Hiren1985";
+    
+    // ===== LOGIN LOGIC =====
+    function handleLogin() {
+      const password = document.getElementById('passwordInput').value;
+      const errorMsg = document.getElementById('errorMessage');
+      
+      if (password === '') {
+        errorMsg.textContent = 'Please enter a password';
+        errorMsg.classList.add('show');
+        return;
+      }
+      
+      if (password === CORRECT_PASSWORD) {
+        // Store session in browser (lasts while browser is open)
+        sessionStorage.setItem('calculatorAccess', 'true');
+        
+        // Hide login, show app
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContainer').classList.add('show');
+        errorMsg.classList.remove('show');
+      } else {
+        errorMsg.textContent = 'Incorrect password. Try again.';
+        errorMsg.classList.add('show');
+        document.getElementById('passwordInput').value = '';
+      }
+    }
+    
+    function handleLogout() {
+      sessionStorage.removeItem('calculatorAccess');
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('appContainer').classList.remove('show');
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('errorMessage').classList.remove('show');
+      resetCalc();
+    }
+    
+    // Check if already logged in when page loads
+    window.addEventListener('load', function() {
+      const isLoggedIn = sessionStorage.getItem('calculatorAccess');
+      if (isLoggedIn === 'true') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContainer').classList.add('show');
+      }
+    });
+    
+    // Allow Enter key to submit password
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          handleLogin();
+        }
+      });
+    });
+
+    // ===== CALCULATOR LOGIC =====
+    let dealState = {
+      category: '',
+      categoryName: '',
+      unitCost: 0,
+      marginMin: 0,
+      marginMax: 0,
+      suggestedRetail: 0
+    };
+
+    let currentResult = {};
+
+    document.getElementById('category').addEventListener('change', function() {
+      const parts = this.value.split('|');
+      dealState.categoryName = parts[0];
+      const margins = parts[1].split('-');
+      dealState.marginMin = parseInt(margins[0]);
+      dealState.marginMax = parseInt(margins[1]);
+      updateDisplay();
+    });
+
+    document.getElementById('unitCost').addEventListener('input', function() {
+      dealState.unitCost = parseFloat(this.value) || 0;
+      updateDisplay();
+    });
+
+    function updateDisplay() {
+      if (dealState.unitCost > 0 && dealState.marginMin > 0) {
+        dealState.suggestedRetail = Math.round((dealState.unitCost / (1 - dealState.marginMin / 100)) * 100) / 100;
+        document.getElementById('marginRange').textContent = dealState.marginMin + '–' + dealState.marginMax + '%';
+        document.getElementById('suggestedRetail').textContent = dealState.suggestedRetail.toFixed(2);
+        document.getElementById('marginDisplay').classList.add('show');
+        document.getElementById('dealOptions').classList.add('show');
+        document.getElementById('results').classList.remove('show');
+      } else {
+        document.getElementById('marginDisplay').classList.remove('show');
+        document.getElementById('dealOptions').classList.remove('show');
+      }
+    }
+
+    function showDealForm(type) {
+      document.getElementById('dealForm').classList.add('show');
+      const inputContainer = document.getElementById('dealFormInputs');
+      inputContainer.innerHTML = '';
+      
+      if (type === 'buy2') {
+        document.getElementById('dealFormTitle').textContent = 'Buy 2 for $X';
+        const suggestedDealPrice = Math.round(dealState.suggestedRetail * 1.9 * 100) / 100;
+        inputContainer.innerHTML = `
+          <div class="input-group">
+            <label for="dealPrice">Deal Price for 2 items ($)</label>
+            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDealPrice}">
+            <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 2).toFixed(2)} for 2</div>
+          </div>
+        `;
+        currentResult.type = 'buy2';
+      } else if (type === 'buy3') {
+        document.getElementById('dealFormTitle').textContent = 'Buy 3 for $X';
+        const suggestedDealPrice = Math.round(dealState.suggestedRetail * 2.85 * 100) / 100;
+        inputContainer.innerHTML = `
+          <div class="input-group">
+            <label for="dealPrice">Deal Price for 3 items ($)</label>
+            <input type="number" id="dealPrice" placeholder="e.g. ${suggestedDealPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDealPrice}">
+            <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 3).toFixed(2)} for 3</div>
+          </div>
+        `;
+        currentResult.type = 'buy3';
+      } else if (type === 'bogo') {
+        document.getElementById('dealFormTitle').textContent = 'Buy One Get One';
+        inputContainer.innerHTML = `
+          <div class="input-group">
+            <label for="payPrice">Pay Price (1st item)</label>
+            <input type="number" id="payPrice" placeholder="e.g. ${dealState.suggestedRetail.toFixed(2)}" step="0.01" min="0" value="${dealState.suggestedRetail.toFixed(2)}">
+          </div>
+          <div class="input-group">
+            <label for="secondPrice">2nd Item Price (0 = Free)</label>
+            <input type="number" id="secondPrice" placeholder="0 or discount" step="0.01" min="0" value="0">
+          </div>
+          <div class="deal-form-note">Regular price: $${(dealState.suggestedRetail * 2).toFixed(2)} for 2</div>
+        `;
+        currentResult.type = 'bogo';
+      } else if (type === 'discount') {
+        document.getElementById('dealFormTitle').textContent = 'Quantity Discount';
+        const suggestedDiscPrice = Math.round(dealState.suggestedRetail * 0.85 * 100) / 100;
+        inputContainer.innerHTML = `
+          <div class="input-group">
+            <label for="qtyBuy">Buy Quantity</label>
+            <input type="number" id="qtyBuy" placeholder="e.g. 6" step="1" min="1" value="6">
+          </div>
+          <div class="input-group">
+            <label for="discPrice">Discount Price Each ($)</label>
+            <input type="number" id="discPrice" placeholder="e.g. ${suggestedDiscPrice.toFixed(2)}" step="0.01" min="0" value="${suggestedDiscPrice}">
+          </div>
+        `;
+        currentResult.type = 'discount';
+      } else if (type === 'single') {
+        document.getElementById('dealForm').classList.remove('show');
+        currentResult = {
+          type: 'single',
+          price: dealState.suggestedRetail,
+          unitCost: dealState.unitCost,
+          margin: dealState.marginMin,
+          marginTotal: Math.round((dealState.suggestedRetail - dealState.unitCost) * 100) / 100,
+          marginPct: dealState.marginMin
+        };
+        displayResults();
+        return;
+      }
+    }
+
+    function closeDealForm() {
+      document.getElementById('dealForm').classList.remove('show');
+    }
+
+    function calcDeal() {
+      const type = currentResult.type;
+      
+      if (type === 'buy2') {
+        const dealPrice = parseFloat(document.getElementById('dealPrice').value) || 0;
+        if (!dealPrice) {
+          alert('Enter deal price');
+          return;
+        }
+        const costTotal = dealState.unitCost * 2;
+        const marginTotal = dealPrice - costTotal;
+        const marginPct = Math.round((marginTotal / dealPrice) * 100);
+        
+        currentResult = {
+          type: 'Buy 2 for $X',
+          dealPrice: Math.round(dealPrice * 100) / 100,
+          priceEach: Math.round((dealPrice / 2) * 100) / 100,
+          quantity: 2,
+          unitCost: dealState.unitCost,
+          costTotal: Math.round(costTotal * 100) / 100,
+          marginTotal: Math.round(marginTotal * 100) / 100,
+          marginPct: marginPct,
+          regularPrice: Math.round(dealState.suggestedRetail * 2 * 100) / 100
+        };
+      } else if (type === 'buy3') {
+        const dealPrice = parseFloat(document.getElementById('dealPrice').value) || 0;
+        if (!dealPrice) {
+          alert('Enter deal price');
+          return;
+        }
+        const costTotal = dealState.unitCost * 3;
+        const marginTotal = dealPrice - costTotal;
+        const marginPct = Math.round((marginTotal / dealPrice) * 100);
+        
+        currentResult = {
+          type: 'Buy 3 for $X',
+          dealPrice: Math.round(dealPrice * 100) / 100,
+          priceEach: Math.round((dealPrice / 3) * 100) / 100,
+          quantity: 3,
+          unitCost: dealState.unitCost,
+          costTotal: Math.round(costTotal * 100) / 100,
+          marginTotal: Math.round(marginTotal * 100) / 100,
+          marginPct: marginPct,
+          regularPrice: Math.round(dealState.suggestedRetail * 3 * 100) / 100
+        };
+      } else if (type === 'bogo') {
+        const payPrice = parseFloat(document.getElementById('payPrice').value) || 0;
+        const secondPrice = parseFloat(document.getElementById('secondPrice').value) || 0;
+        if (!payPrice) {
+          alert('Enter pay price');
+          return;
+        }
+        const totalRevenue = payPrice + secondPrice;
+        const costTotal = dealState.unitCost * 2;
+        const marginTotal = totalRevenue - costTotal;
+        const marginPct = totalRevenue > 0 ? Math.round((marginTotal / totalRevenue) * 100) : 0;
+        
+        currentResult = {
+          type: 'BOGO',
+          payPrice: Math.round(payPrice * 100) / 100,
+          secondPrice: Math.round(secondPrice * 100) / 100,
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
+          unitCost: dealState.unitCost,
+          costTotal: Math.round(costTotal * 100) / 100,
+          marginTotal: Math.round(marginTotal * 100) / 100,
+          marginPct: marginPct,
+          regularPrice: Math.round(dealState.suggestedRetail * 2 * 100) / 100
+        };
+      } else if (type === 'discount') {
+        const qty = parseInt(document.getElementById('qtyBuy').value) || 1;
+        const discPrice = parseFloat(document.getElementById('discPrice').value) || 0;
+        if (!discPrice) {
+          alert('Enter discount price');
+          return;
+        }
+        const totalRevenue = discPrice * qty;
+        const costTotal = dealState.unitCost * qty;
+        const marginTotal = totalRevenue - costTotal;
+        const marginPct = Math.round((marginTotal / totalRevenue) * 100);
+        
+        currentResult = {
+          type: 'Quantity Discount',
+          quantity: qty,
+          priceEach: Math.round(discPrice * 100) / 100,
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
+          unitCost: dealState.unitCost,
+          costTotal: Math.round(costTotal * 100) / 100,
+          marginTotal: Math.round(marginTotal * 100) / 100,
+          marginPct: marginPct,
+          regularPrice: Math.round(dealState.suggestedRetail * qty * 100) / 100
+        };
+      }
+      
+      displayResults();
+    }
+
+    function displayResults() {
+      document.getElementById('dealForm').classList.remove('show');
+      document.getElementById('dealOptions').classList.remove('show');
+      document.getElementById('results').classList.add('show');
+      
+      document.getElementById('resultMarginDollars').textContent = currentResult.marginTotal.toFixed(2);
+      document.getElementById('resultMarginPercent').textContent = currentResult.marginPct;
+      
+      let contentHTML = '';
+      
+      if (currentResult.type === 'single') {
+        document.getElementById('resultTitle').textContent = 'Suggested Retail Price';
+        contentHTML = `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 24px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px;">$${currentResult.price.toFixed(2)}</div>
+            <div style="font-size: 13px; color: #666;">Cost: $${currentResult.unitCost.toFixed(2)} | Margin: ${currentResult.margin}%</div>
+          </div>
+        `;
+      } else if (currentResult.type === 'Buy 2 for $X') {
+        document.getElementById('resultTitle').textContent = 'Buy 2 for $' + currentResult.dealPrice.toFixed(2);
+        contentHTML = `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 6px;">Price per item: <span style="font-weight: 500; font-size: 15px; color: #1a1a1a;">$${currentResult.priceEach.toFixed(2)}</span></div>
+            <div style="font-size: 13px; color: #666;">Regular: $${currentResult.regularPrice.toFixed(2)} for 2 | Saves: $${(currentResult.regularPrice - currentResult.dealPrice).toFixed(2)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 6px;">Total cost to you: $${currentResult.costTotal.toFixed(2)}</div>
+          </div>
+        `;
+      } else if (currentResult.type === 'Buy 3 for $X') {
+        document.getElementById('resultTitle').textContent = 'Buy 3 for $' + currentResult.dealPrice.toFixed(2);
+        contentHTML = `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 6px;">Price per item: <span style="font-weight: 500; font-size: 15px; color: #1a1a1a;">$${currentResult.priceEach.toFixed(2)}</span></div>
+            <div style="font-size: 13px; color: #666;">Regular: $${currentResult.regularPrice.toFixed(2)} for 3 | Saves: $${(currentResult.regularPrice - currentResult.dealPrice).toFixed(2)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 6px;">Total cost to you: $${currentResult.costTotal.toFixed(2)}</div>
+          </div>
+        `;
+      } else if (currentResult.type === 'BOGO') {
+        document.getElementById('resultTitle').textContent = 'BOGO: Pay $' + currentResult.payPrice.toFixed(2) + ' + Get 2nd for $' + currentResult.secondPrice.toFixed(2);
+        contentHTML = `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 6px;">Total for 2: <span style="font-weight: 500; font-size: 15px; color: #1a1a1a;">$${currentResult.totalRevenue.toFixed(2)}</span></div>
+            <div style="font-size: 13px; color: #666;">Regular: $${currentResult.regularPrice.toFixed(2)} for 2 | Saves: $${(currentResult.regularPrice - currentResult.totalRevenue).toFixed(2)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 6px;">Total cost to you: $${currentResult.costTotal.toFixed(2)}</div>
+          </div>
+        `;
+      } else if (currentResult.type === 'Quantity Discount') {
+        document.getElementById('resultTitle').textContent = 'Buy ' + currentResult.quantity + ' for $' + currentResult.priceEach.toFixed(2) + ' each';
+        contentHTML = `
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 6px;">Total for ${currentResult.quantity}: <span style="font-weight: 500; font-size: 15px; color: #1a1a1a;">$${currentResult.totalRevenue.toFixed(2)}</span></div>
+            <div style="font-size: 13px; color: #666;">Regular: $${currentResult.regularPrice.toFixed(2)} for ${currentResult.quantity} | Saves: $${(currentResult.regularPrice - currentResult.totalRevenue).toFixed(2)}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 6px;">Total cost to you: $${currentResult.costTotal.toFixed(2)}</div>
+          </div>
+        `;
+      }
+      
+      document.getElementById('resultContent').innerHTML = contentHTML;
+    }
+
+    function copyResults() {
+      let text = `PROMO DEAL\n`;
+      text += `Category: ${dealState.categoryName || 'N/A'}\n`;
+      text += `Unit Cost: $${dealState.unitCost.toFixed(2)}\n\n`;
+      
+      if (currentResult.type === 'single') {
+        text += `Suggested Retail: $${currentResult.price.toFixed(2)}\n`;
+        text += `Margin: ${currentResult.margin}% ($${(currentResult.price - currentResult.unitCost).toFixed(2)})\n`;
+      } else if (currentResult.type === 'Buy 2 for $X') {
+        text += `Buy 2 for: $${currentResult.dealPrice.toFixed(2)}\n`;
+        text += `Price per item: $${currentResult.priceEach.toFixed(2)}\n`;
+        text += `Regular price: $${currentResult.regularPrice.toFixed(2)}\n`;
+        text += `Customer saves: $${(currentResult.regularPrice - currentResult.dealPrice).toFixed(2)}\n`;
+        text += `Your margin: ${currentResult.marginPct}% ($${currentResult.marginTotal.toFixed(2)})\n`;
+      } else if (currentResult.type === 'Buy 3 for $X') {
+        text += `Buy 3 for: $${currentResult.dealPrice.toFixed(2)}\n`;
+        text += `Price per item: $${currentResult.priceEach.toFixed(2)}\n`;
+        text += `Regular price: $${currentResult.regularPrice.toFixed(2)}\n`;
+        text += `Customer saves: $${(currentResult.regularPrice - currentResult.dealPrice).toFixed(2)}\n`;
+        text += `Your margin: ${currentResult.marginPct}% ($${currentResult.marginTotal.toFixed(2)})\n`;
+      } else if (currentResult.type === 'BOGO') {
+        text += `BOGO: Pay $${currentResult.payPrice.toFixed(2)} + Get 2nd for $${currentResult.secondPrice.toFixed(2)}\n`;
+        text += `Total for 2: $${currentResult.totalRevenue.toFixed(2)}\n`;
+        text += `Regular price: $${currentResult.regularPrice.toFixed(2)}\n`;
+        text += `Customer saves: $${(currentResult.regularPrice - currentResult.totalRevenue).toFixed(2)}\n`;
+        text += `Your margin: ${currentResult.marginPct}% ($${currentResult.marginTotal.toFixed(2)})\n`;
+      } else if (currentResult.type === 'Quantity Discount') {
+        text += `Buy ${currentResult.quantity} for $${currentResult.priceEach.toFixed(2)} each\n`;
+        text += `Total for ${currentResult.quantity}: $${currentResult.totalRevenue.toFixed(2)}\n`;
+        text += `Regular price: $${currentResult.regularPrice.toFixed(2)}\n`;
+        text += `Customer saves: $${(currentResult.regularPrice - currentResult.totalRevenue).toFixed(2)}\n`;
+        text += `Your margin: ${currentResult.marginPct}% ($${currentResult.marginTotal.toFixed(2)})\n`;
+      }
+      
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Deal copied to clipboard!');
+      });
+    }
+
+    function resetCalc() {
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('dealOptions').classList.remove('show');
+      document.getElementById('marginDisplay').classList.remove('show');
+      document.getElementById('unitCost').value = '';
+      document.getElementById('category').value = '';
+      dealState = { category: '', categoryName: '', unitCost: 0, marginMin: 0, marginMax: 0, suggestedRetail: 0 };
+      currentResult = {};
+    }
+  </script>
+</body>
+</html>
