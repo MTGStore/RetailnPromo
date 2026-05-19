@@ -586,6 +586,48 @@
       <button class="copy" onclick="copyResults()">Copy Deal Info</button>
       <button class="reset" onclick="resetCalc()">Start Over</button>
     </div>
+
+    <!-- Deal Profitability Calculator -->
+    <div id="profitabilitySection" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e0e0e0; display: none;">
+      <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 1.5rem; color: #1a1a1a;">Deal Profitability Comparison</h2>
+      
+      <div style="background: linear-gradient(135deg, #f0fdf4 0%, #f0fef9 100%); padding: 1.2rem; border-radius: 10px; border-left: 5px solid #10b981; margin-bottom: 1.5rem;">
+        <p style="font-size: 13px; color: #666; margin: 0;">Adjust prices below to see real-time profitability updates. The higher the profit, the better for your business.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem;">
+        <div style="background: #f5f7ff; padding: 1rem; border-radius: 8px; border: 2px solid #667eea;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #667eea; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Adjust Buy 2 Price</label>
+          <input type="number" id="adjustBuy2Price" step="0.05" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 600;">
+        </div>
+        <div style="background: #f5f7ff; padding: 1rem; border-radius: 8px; border: 2px solid #667eea;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #667eea; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Adjust Buy 3 Price</label>
+          <input type="number" id="adjustBuy3Price" step="0.05" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-weight: 600;">
+        </div>
+      </div>
+
+      <div id="profitabilityTable" style="overflow-x: auto; margin-bottom: 1.5rem;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #f5f7ff; border-bottom: 2px solid #667eea;">
+              <th style="padding: 12px; text-align: left; font-weight: 700; color: #667eea;">Deal Type</th>
+              <th style="padding: 12px; text-align: right; font-weight: 700; color: #667eea;">Price</th>
+              <th style="padding: 12px; text-align: right; font-weight: 700; color: #667eea;">Your Cost</th>
+              <th style="padding: 12px; text-align: right; font-weight: 700; color: #10b981;">Profit</th>
+              <th style="padding: 12px; text-align: right; font-weight: 700; color: #f59e0b;">Margin %</th>
+              <th style="padding: 12px; text-align: center; font-weight: 700; color: #667eea;">Ranking</th>
+            </tr>
+          </thead>
+          <tbody id="profitabilityBody">
+          </tbody>
+        </table>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); padding: 1.2rem; border-radius: 10px; border-left: 5px solid #10b981;">
+        <div style="font-size: 12px; font-weight: 700; color: #10b981; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">✓ Recommendation</div>
+        <div id="profitabilityRecommendation" style="font-size: 13px; color: #166534; line-height: 1.6;"></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -637,14 +679,7 @@
       }
     });
     
-    // Allow Enter key to submit password
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          handleLogin();
-        }
-      });
-    });
+
 
     // ===== CALCULATOR LOGIC =====
     let dealState = {
@@ -686,12 +721,21 @@
         document.getElementById('dealOptions').classList.add('show');
         document.getElementById('results').classList.remove('show');
         
+        // Show profitability section automatically
+        document.getElementById('profitabilitySection').style.display = 'block';
+        
         // Auto-display deal suggestions
         displayDealSuggestions();
+        
+        // Calculate profitability automatically
+        setTimeout(() => {
+          calculateProfitability();
+        }, 100);
       } else {
         document.getElementById('marginDisplay').classList.remove('show');
         document.getElementById('dealOptions').classList.remove('show');
         document.getElementById('results').classList.remove('show');
+        document.getElementById('profitabilitySection').style.display = 'none';
       }
     }
 
@@ -939,6 +983,7 @@
       document.getElementById('dealForm').classList.remove('show');
       document.getElementById('dealOptions').classList.remove('show');
       document.getElementById('results').classList.add('show');
+      document.getElementById('profitabilitySection').style.display = 'block';
       
       document.getElementById('resultMarginDollars').textContent = currentResult.marginTotal.toFixed(2);
       document.getElementById('resultMarginPercent').textContent = currentResult.marginPct;
@@ -992,7 +1037,131 @@
       }
       
       document.getElementById('resultContent').innerHTML = contentHTML;
+      
+      // Calculate and display profitability comparison
+      calculateProfitability();
     }
+
+    function calculateProfitability() {
+      // Get adjusted prices from input fields
+      let buy2Price = roundToNearestNickel(dealState.suggestedRetail * 1.9);
+      let buy3Price = roundToNearestNickel(dealState.suggestedRetail * 2.85);
+      
+      const adjustBuy2Input = document.getElementById('adjustBuy2Price');
+      const adjustBuy3Input = document.getElementById('adjustBuy3Price');
+      
+      // Use adjusted prices if they've been entered
+      if (adjustBuy2Input.value) {
+        buy2Price = parseFloat(adjustBuy2Input.value);
+      }
+      if (adjustBuy3Input.value) {
+        buy3Price = parseFloat(adjustBuy3Input.value);
+      }
+      
+      // Update input fields with suggested prices if empty
+      if (!adjustBuy2Input.value) {
+        adjustBuy2Input.value = buy2Price.toFixed(2);
+      }
+      if (!adjustBuy3Input.value) {
+        adjustBuy3Input.value = buy3Price.toFixed(2);
+      }
+      
+      // Calculate all deal types based on current cost
+      const deals = [];
+      
+      // Single item
+      const singlePrice = dealState.suggestedRetail;
+      const singleCost = dealState.unitCost;
+      const singleProfit = singlePrice - singleCost;
+      const singleMargin = Math.round((singleProfit / singlePrice) * 100);
+      deals.push({
+        type: 'Single Item',
+        price: singlePrice,
+        cost: singleCost,
+        profit: singleProfit,
+        margin: singleMargin,
+        quantity: 1
+      });
+      
+      // Buy 2
+      const buy2Cost = dealState.unitCost * 2;
+      const buy2Profit = buy2Price - buy2Cost;
+      const buy2Margin = buy2Price > 0 ? Math.round((buy2Profit / buy2Price) * 100) : 0;
+      deals.push({
+        type: 'Buy 2',
+        price: buy2Price,
+        cost: buy2Cost,
+        profit: buy2Profit,
+        margin: buy2Margin,
+        quantity: 2
+      });
+      
+      // Buy 3
+      const buy3Cost = dealState.unitCost * 3;
+      const buy3Profit = buy3Price - buy3Cost;
+      const buy3Margin = buy3Price > 0 ? Math.round((buy3Profit / buy3Price) * 100) : 0;
+      deals.push({
+        type: 'Buy 3',
+        price: buy3Price,
+        cost: buy3Cost,
+        profit: buy3Profit,
+        margin: buy3Margin,
+        quantity: 3
+      });
+      
+      // Sort by profit (highest first)
+      deals.sort((a, b) => b.profit - a.profit);
+      
+      // Rank them
+      deals.forEach((deal, index) => {
+        deal.rank = index + 1;
+      });
+      
+      // Generate table rows
+      let tableHTML = '';
+      deals.forEach(deal => {
+        const rankBadge = deal.rank === 1 ? '🥇' : deal.rank === 2 ? '🥈' : '🥉';
+        tableHTML += `
+          <tr style="border-bottom: 1px solid #e0e0e0; transition: all 0.2s;">
+            <td style="padding: 12px; font-weight: 600; color: #1a1a1a;">${deal.type}</td>
+            <td style="padding: 12px; text-align: right; color: #667eea; font-weight: 600;">$${deal.price.toFixed(2)}</td>
+            <td style="padding: 12px; text-align: right; color: #666;">$${deal.cost.toFixed(2)}</td>
+            <td style="padding: 12px; text-align: right; color: #10b981; font-weight: 700;">$${deal.profit.toFixed(2)}</td>
+            <td style="padding: 12px; text-align: right; color: #f59e0b; font-weight: 600;">${deal.margin}%</td>
+            <td style="padding: 12px; text-align: center; font-size: 18px;">${rankBadge}</td>
+          </tr>
+        `;
+      });
+      
+      document.getElementById('profitabilityBody').innerHTML = tableHTML;
+      
+      // Generate recommendation
+      const bestDeal = deals[0];
+      const recommendation = `<strong>${bestDeal.type}</strong> is your most profitable option with <strong>$${bestDeal.profit.toFixed(2)}</strong> profit per transaction and <strong>${bestDeal.margin}%</strong> margin. This deal makes you the most money per sale!`;
+      document.getElementById('profitabilityRecommendation').innerHTML = recommendation;
+    }
+    
+    // Add event listeners for price adjustments
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          handleLogin();
+        }
+      });
+      
+      // Add listeners for price adjustment inputs
+      setTimeout(() => {
+        const adjustBuy2 = document.getElementById('adjustBuy2Price');
+        const adjustBuy3 = document.getElementById('adjustBuy3Price');
+        
+        if (adjustBuy2) {
+          adjustBuy2.addEventListener('input', calculateProfitability);
+        }
+        if (adjustBuy3) {
+          adjustBuy3.addEventListener('input', calculateProfitability);
+        }
+      }, 500);
+    });
 
     function copyResults() {
       let text = `PROMO DEAL\n`;
@@ -1037,6 +1206,7 @@
       document.getElementById('results').classList.remove('show');
       document.getElementById('dealOptions').classList.remove('show');
       document.getElementById('marginDisplay').classList.remove('show');
+      document.getElementById('profitabilitySection').style.display = 'none';
       document.getElementById('unitCost').value = '';
       document.getElementById('category').value = '';
       dealState = { category: '', categoryName: '', unitCost: 0, marginMin: 0, marginMax: 0, suggestedRetail: 0 };
